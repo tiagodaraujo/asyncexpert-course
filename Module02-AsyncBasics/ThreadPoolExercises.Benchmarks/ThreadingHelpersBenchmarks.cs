@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BenchmarkDotNet.Attributes;
+using System;
 using System.Security.Cryptography;
-using System.Text;
-using BenchmarkDotNet.Attributes;
 using ThreadPoolExercises.Core;
 
 namespace ThreadPoolExercises.Benchmarks
