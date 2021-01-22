@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,7 +8,7 @@ namespace AsyncAwaitExercises.Core
 {
     public class AsyncHelpers
     {
-        public static async Task<string> GetStringWithRetries(HttpClient client, string url, int maxTries = 3, CancellationToken token = default)
+        public static Task<string> GetStringWithRetries(HttpClient client, string url, int maxTries = 3, CancellationToken token = default)
         {
             // Create a method that will try to get a response from a given `url`, retrying `maxTries` number of times.
             // It should wait one second before the second try, and double the wait time before every successive retry
@@ -22,8 +23,36 @@ namespace AsyncAwaitExercises.Core
             // * `HttpClient.GetStringAsync` does not accept cancellation token (use `GetAsync` instead)
             // * you may use `EnsureSuccessStatusCode()` method
 
-            return string.Empty;
+            if (maxTries <= 2)
+                throw new ArgumentException($"'{nameof(maxTries)}' must be at least 2.", nameof(maxTries));
+
+            return GetStringWithRetriesInternal(client, url, maxTries, token);
         }
 
+        private static async Task<string> GetStringWithRetriesInternal(HttpClient client, string url, int maxTries, CancellationToken token)
+        {
+            for (int count = 0; count < maxTries; count++)
+            {
+                try
+                {
+                    var message = await client.GetAsync(url, token);
+                    message.EnsureSuccessStatusCode();
+
+                    return await message.Content.ReadAsStringAsync();
+                }
+                catch
+                {
+                    if (count == maxTries - 1)
+                    {
+                        throw;
+                    }
+                }
+
+                var delay = (int)Math.Pow(2 , count) * 1000;
+                await Task.Delay(delay, token);
+            }
+
+            throw new Exception();
+        }
     }
 }
